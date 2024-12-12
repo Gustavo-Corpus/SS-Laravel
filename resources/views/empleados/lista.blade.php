@@ -26,9 +26,12 @@
                             width="50"
                             height="50"
                             alt="Avatar de {{ $empleado->nombre }}"
-                            onerror="this.onerror=null; this.src='{{ asset('images/default-avatar.png') }}';">
+                            onerror="this.src='{{ asset('images/default-avatar.png') }}'"
+                        >
                     @else
-                        <i class="bi bi-person-circle" style="font-size: 2rem;"></i>
+                        <div class="text-center">
+                            <i class="bi bi-person-circle" style="font-size: 2rem;"></i>
+                        </div>
                     @endif
                 </td>
                 <td>
