@@ -7,47 +7,39 @@ use App\Http\Controllers\EmpleadoController;
 use App\Http\Controllers\CalificacionController;
 use Illuminate\Support\Facades\Route;
 
-// Ruta raíz redirige al login
-Route::get('/', function () {
-    return redirect('/login');
-});
-
 // Rutas de autenticación
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login']);
-    Route::post('/register', [RegisterController::class, 'store'])->name('register'); // Nueva ruta
+    Route::post('/register', [RegisterController::class, 'store'])->name('register');
 });
 
-// Rutas protegidas que requieren autenticación
-Route::middleware('auth')->group(function () {
-    // Ruta de logout
-    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+// Rutas protegidas
+Route::middleware(['auth'])->group(function () {
+    // Redirección de raíz a dashboard
+    Route::get('/', function () {
+        return redirect('/dashboard');
+    });
 
-    // Dashboard
+    // Dashboard y estadísticas
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/estadisticas', [DashboardController::class, 'getEstadisticas'])->name('estadisticas');
 
-    // Rutas para empleados (filtrado, estadísticas y CRUD)
-    Route::prefix('empleados')->group(function () {
-        // Filtrado y estadísticas
-        Route::get('/por-estado', [DashboardController::class, 'getEmpleadosPorEstado'])->name('empleados.por-estado');
-        Route::get('/estadisticas', [DashboardController::class, 'getEstadisticas'])->name('empleados.estadisticas');
-        Route::get('/exportar', [DashboardController::class, 'exportarEmpleados'])->name('empleados.exportar');
+    // Empleados
+    Route::get('/empleados/por-estado', [DashboardController::class, 'getEmpleadosPorEstado']);
+    Route::get('/empleados/exportar', [DashboardController::class, 'exportarEmpleados']);
 
-        // CRUD
-        Route::post('/', [EmpleadoController::class, 'store'])->name('empleados.store'); // Cambio aquí
-        Route::get('/{empleado}', [EmpleadoController::class, 'show'])->name('empleados.show');
-        Route::post('/{empleado}', [EmpleadoController::class, 'update'])->name('empleados.update');
-        Route::delete('/{empleado}', [EmpleadoController::class, 'destroy'])->name('empleados.destroy');
-    });
+    // CRUD Empleados
+    Route::post('/empleados', [EmpleadoController::class, 'store']);
+    Route::get('/empleados/{empleado}', [EmpleadoController::class, 'show']);
+    Route::post('/empleados/{empleado}', [EmpleadoController::class, 'update']);
+    Route::delete('/empleados/{empleado}', [EmpleadoController::class, 'destroy']);
 
-    // Rutas para calificaciones
-    Route::prefix('calificaciones')->group(function () {
-        Route::get('/{empleado}', [CalificacionController::class, 'getCalificaciones'])->name('calificaciones.get');
-        Route::post('/', [CalificacionController::class, 'store'])->name('calificaciones.store');
-        Route::put('/{calificacion}', [CalificacionController::class, 'update'])->name('calificaciones.update');
-    });
+    // Calificaciones
+    Route::get('/calificaciones/{empleado}', [CalificacionController::class, 'getCalificaciones']);
+    Route::post('/calificaciones', [CalificacionController::class, 'store']);
+    Route::put('/calificaciones/{calificacion}', [CalificacionController::class, 'update']);
+
+    // Logout
+    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 });
-
-// Ruta de prueba (remover en producción)
-Route::get('/prueba', [PruebaController::class, 'index']);

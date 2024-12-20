@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Estado;
 use App\Models\Usuario;
+use App\Models\Evaluacion;
 use App\Models\Departamento;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
@@ -42,29 +44,92 @@ class DashboardController extends Controller
     }
 
     public function getEstadisticas()
-    {
-        $stats = [
-            'totalEmpleados' => Usuario::where('estatus', 'activo')->count(),
-            'promedioGlobal' => DB::table('evaluaciones')->avg('calificacion'),
-            'totalEstados' => Estado::count(),
-            'distribucionEstados' => DB::table('usuarios')
-                ->select('estados.estado', DB::raw('count(*) as total'))
-                ->join('estados', 'usuarios.id_estado', '=', 'estados.id_estado')
-                ->where('usuarios.estatus', 'activo')
-                ->groupBy('estados.estado')
-                ->get(),
-            'promediosPorEstado' => DB::table('estados')
-                ->select('estados.estado',
-                        DB::raw('COALESCE(AVG(evaluaciones.calificacion), 0) as promedio'))
-                ->leftJoin('usuarios', 'estados.id_estado', '=', 'usuarios.id_estado')
-                ->leftJoin('evaluaciones', 'usuarios.id_usuarios', '=', 'evaluaciones.id_usuario')
-                ->where('usuarios.estatus', 'activo')
-                ->groupBy('estados.estado')
-                ->get()
+{
+    try {
+        Log::info('Iniciando getEstadisticas');
+
+        // Verificar la conexión a la base de datos
+        try {
+            DB::connection()->getPdo();
+            Log::info('Conexión a base de datos exitosa');
+        } catch (\Exception $e) {
+            Log::error('Error de conexión a la base de datos: ' . $e->getMessage());
+            throw $e;
+        }
+
+        // Debuggear cada consulta
+        Log::info('Obteniendo total de empleados');
+        $totalEmpleados = Usuario::where('estatus', 'activo')->count();
+        Log::info('Total empleados: ' . $totalEmpleados);
+
+        Log::info('Obteniendo promedio global');
+        $promedioGlobal = Evaluacion::avg('calificacion') ?? 0;
+        Log::info('Promedio global: ' . $promedioGlobal);
+
+        Log::info('Obteniendo total de estados');
+        $totalEstados = Estado::count();
+        Log::info('Total estados: ' . $totalEstados);
+
+        Log::info('Obteniendo distribución de estados');
+        $distribucionEstados = DB::table('estados')
+            ->leftJoin('usuarios', function($join) {
+                $join->on('estados.id_estado', '=', 'usuarios.id_estado')
+                     ->where('usuarios.estatus', '=', 'activo');
+            })
+            ->select('estados.estado', DB::raw('COUNT(usuarios.id_usuarios) as total'))
+            ->groupBy('estados.id_estado', 'estados.estado')
+            ->orderBy('estados.estado')
+            ->get();
+        Log::info('Distribución de estados:', $distribucionEstados->toArray());
+
+        Log::info('Obteniendo promedios por estado');
+        $promediosPorEstado = DB::table('estados')
+            ->leftJoin('usuarios', function($join) {
+                $join->on('estados.id_estado', '=', 'usuarios.id_estado')
+                     ->where('usuarios.estatus', '=', 'activo');
+            })
+            ->leftJoin('evaluaciones', 'usuarios.id_usuarios', '=', 'evaluaciones.id_usuario')
+            ->select('estados.estado', DB::raw('COALESCE(AVG(evaluaciones.calificacion), 0) as promedio'))
+            ->groupBy('estados.id_estado', 'estados.estado')
+            ->orderBy('estados.estado')
+            ->get();
+        Log::info('Promedios por estado:', $promediosPorEstado->toArray());
+
+        $datos = [
+            'totalEmpleados' => $totalEmpleados,
+            'promedioGlobal' => round($promedioGlobal, 2),
+            'totalEstados' => $totalEstados,
+            'distribucionEstados' => $distribucionEstados->map(function($item) {
+                return [
+                    'estado' => $item->estado,
+                    'total' => (int)$item->total
+                ];
+            }),
+            'promediosPorEstado' => $promediosPorEstado->map(function($item) {
+                return [
+                    'estado' => $item->estado,
+                    'promedio' => round((float)$item->promedio, 1)
+                ];
+            })
         ];
 
-        return response()->json($stats);
+        Log::info('Datos finales a devolver:', $datos);
+        return response()->json($datos);
+
+    } catch (\Exception $e) {
+        Log::error('Error en getEstadisticas: ' . $e->getMessage());
+        Log::error('Stack trace: ' . $e->getTraceAsString());
+        Log::error('Línea del error: ' . $e->getLine());
+        Log::error('Archivo del error: ' . $e->getFile());
+
+        return response()->json([
+            'error' => 'Error interno del servidor',
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ], 500);
     }
+}
 
     public function exportarEmpleados(Request $request)
     {

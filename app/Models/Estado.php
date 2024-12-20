@@ -8,6 +8,7 @@ class Estado extends Model
 {
     protected $table = 'estados';
     protected $primaryKey = 'id_estado';
+    public $timestamps = false;
 
     protected $fillable = ['estado'];
 

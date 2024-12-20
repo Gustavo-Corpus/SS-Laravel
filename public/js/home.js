@@ -1,3 +1,9 @@
+function getBaseUrl() {
+    return window.location.pathname.includes("/public")
+        ? "/SS-Laravel/public" // Ajusta 'SS-Laravel' al nombre de tu proyecto
+        : "";
+}
+
 let dataTable;
 let selectedEstado = "";
 let pieChart = null;
@@ -5,53 +11,89 @@ let barChart = null;
 
 function mostrarEstadisticas() {
     $.ajax({
-        url: "/empleados/estadisticas",
+        url: `${getBaseUrl()}/estadisticas`,
         type: "GET",
-        success: function (stats) {
-            // Actualizar métricas generales
-            $("#totalEmpleados").text(stats.totalEmpleados);
-            $("#promedioGlobal").text(stats.promedioGlobal.toFixed(2));
-            $("#totalEstados").text(stats.totalEstados);
+        headers: {
+            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+        },
+        success: function (response) {
+            if (response) {
+                // Actualizar métricas
+                $("#totalEmpleados").text(response.totalEmpleados || 0);
+                $("#promedioGlobal").text(
+                    Number(response.promedioGlobal || 0).toFixed(1)
+                );
+                $("#totalEstados").text(response.totalEstados || 0);
 
-            // Preparar datos para la gráfica de pastel
-            const pieData = {
-                labels: stats.distribucionEstados.map((item) => item.estado),
-                datasets: [
-                    {
-                        data: stats.distribucionEstados.map(
-                            (item) => item.total
-                        ),
-                        backgroundColor: generarColores(
-                            stats.distribucionEstados.length
-                        ),
-                    },
-                ],
-            };
+                // Preparar datos para gráficas
+                const pieData = {
+                    labels: response.distribucionEstados.map(
+                        (item) => item.estado
+                    ),
+                    datasets: [
+                        {
+                            data: response.distribucionEstados.map(
+                                (item) => item.total
+                            ),
+                            backgroundColor: generarColores(
+                                response.distribucionEstados.length
+                            ),
+                        },
+                    ],
+                };
 
-            // Preparar datos para la gráfica de barras
-            const barData = {
-                labels: stats.promediosPorEstado.map((item) => item.estado),
-                datasets: [
-                    {
-                        label: "Promedio de Calificaciones",
-                        data: stats.promediosPorEstado.map(
-                            (item) => item.promedio
-                        ),
-                        backgroundColor: "rgba(54, 162, 235, 0.5)",
-                        borderColor: "rgba(54, 162, 235, 1)",
-                        borderWidth: 1,
-                    },
-                ],
-            };
+                const barData = {
+                    labels: response.promediosPorEstado.map(
+                        (item) => item.estado
+                    ),
+                    datasets: [
+                        {
+                            label: "Promedio de Calificaciones",
+                            data: response.promediosPorEstado.map((item) =>
+                                Number(item.promedio).toFixed(1)
+                            ),
+                            backgroundColor: "rgba(54, 162, 235, 0.5)",
+                            borderColor: "rgba(54, 162, 235, 1)",
+                            borderWidth: 1,
+                        },
+                    ],
+                };
 
-            // Actualizar gráficas
-            actualizarGraficas(pieData, barData);
-
-            // Mostrar modal
-            $("#modalEstadisticas").modal("show");
+                actualizarGraficas(pieData, barData);
+                $("#modalEstadisticas").modal("show");
+            }
+        },
+        error: function (xhr, status, error) {
+            console.error("Error completo:", { xhr, status, error });
+            alert("Error al cargar las estadísticas");
         },
     });
 }
+
+fetch(`${getBaseUrl()}/empleados/estadisticas`, {
+    headers: {
+        Accept: "application/json",
+        "X-CSRF-TOKEN": document
+            .querySelector('meta[name="csrf-token"]')
+            .getAttribute("content"),
+    },
+})
+    .then((response) => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.text(); // primero obtén el texto
+    })
+    .then((text) => {
+        console.log("Respuesta cruda:", text); // mira el texto crudo
+        return JSON.parse(text); // luego intenta parsearlo
+    })
+    .then((data) => {
+        console.log("Datos parseados:", data);
+    })
+    .catch((error) => {
+        console.error("Error:", error);
+    });
 
 function exportarEmpleados() {
     if (!selectedEstado) {
@@ -59,12 +101,12 @@ function exportarEmpleados() {
         return;
     }
 
-    window.location.href = `/empleados/exportar?estado=${selectedEstado}`;
+    window.location.href = `${getBaseUrl()}/empleados/exportar?estado=${selectedEstado}`;
 }
 
 function cargarEmpleadosPorEstado(estadoId) {
     $.ajax({
-        url: "/empleados/por-estado",
+        url: `${getBaseUrl()}/empleados/por-estado`,
         method: "GET",
         data: { estado: estadoId },
         success: function (response) {
@@ -79,7 +121,7 @@ function cargarEmpleadosPorEstado(estadoId) {
 
 function editarEmpleado(id) {
     $.ajax({
-        url: `/empleados/${id}`,
+        url: `${getBaseUrl()}/empleados/${id}`,
         type: "GET",
         success: function (empleado) {
             $("#nombre").val(empleado.nombre);
@@ -112,7 +154,9 @@ function editarEmpleado(id) {
                 if ($("#currentAvatar").length === 0) {
                     const avatarPreview = `
                         <div id="currentAvatar" class="mt-2">
-                            <img src="/storage/fotos_empleados/${empleado.avatar}"
+                            <img src="${getBaseUrl()}/storage/fotos_empleados/${
+                        empleado.avatar
+                    }"
                                  class="rounded-circle"
                                  width="50" height="50">
                             <small class="text-muted ms-2">Avatar actual</small>
@@ -121,7 +165,9 @@ function editarEmpleado(id) {
                 } else {
                     $("#currentAvatar img").attr(
                         "src",
-                        `/storage/fotos_empleados/${empleado.avatar}`
+                        `${getBaseUrl()}/storage/fotos_empleados/${
+                            empleado.avatar
+                        }`
                     );
                 }
             }
@@ -134,7 +180,7 @@ function editarEmpleado(id) {
 function eliminarEmpleado(id) {
     if (confirm("¿Estás seguro de que deseas eliminar este empleado?")) {
         $.ajax({
-            url: `/empleados/${id}`,
+            url: `${getBaseUrl()}/empleados/${id}`,
             method: "DELETE",
             headers: {
                 "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
@@ -153,7 +199,7 @@ function eliminarEmpleado(id) {
 
 function cargarCalificaciones(empleadoId) {
     $.ajax({
-        url: `/calificaciones/${empleadoId}`,
+        url: `${getBaseUrl()}/calificaciones/${empleadoId}`,
         type: "GET",
         success: function (calificaciones) {
             const tbody = $("#calificacionesBody");
@@ -220,7 +266,9 @@ $(document).ready(function () {
         const id = $('input[name="id"]').val();
 
         // URL y método varían según si es actualización o creación
-        const url = id ? `/empleados/${id}` : "/empleados";
+        const url = id
+            ? `${getBaseUrl()}/empleados/${id}`
+            : `${getBaseUrl()}/empleados`;
 
         $.ajax({
             url: url,
@@ -272,11 +320,12 @@ $(document).ready(function () {
         };
 
         const calificacionId = $("#calificacion_id").val();
+        const url = calificacionId
+            ? `${getBaseUrl()}/calificaciones/${calificacionId}`
+            : `${getBaseUrl()}/calificaciones`;
 
         $.ajax({
-            url: calificacionId
-                ? `/calificaciones/${calificacionId}`
-                : "/calificaciones",
+            url: url,
             type: calificacionId ? "PUT" : "POST",
             data: formData,
             success: function (response) {
@@ -389,4 +438,40 @@ function obtenerNombreMes(numeroMes) {
         "Diciembre",
     ];
     return meses[numeroMes - 1];
+}
+
+function abrirModalCalificaciones(empleadoId, nombreEmpleado) {
+    // Limpiar el formulario
+    limpiarFormularioCalificacion();
+
+    // Establecer el ID del empleado
+    $("#empleado_id").val(empleadoId);
+
+    // Actualizar el título del modal con el nombre del empleado
+    $("#modalCalificacionesLabel").text(`Calificaciones - ${nombreEmpleado}`);
+
+    // Cargar las calificaciones existentes
+    cargarCalificaciones(empleadoId);
+
+    // Mostrar el modal
+    $("#modalCalificaciones").modal("show");
+}
+
+function limpiarFormularioCalificacion() {
+    $("#calificacionForm")[0].reset();
+    $("#calificacion_id").val("");
+    $("#empleado_id").val("");
+
+    // Establecer valores por defecto
+    const fechaActual = new Date();
+    $("#mes").val(fechaActual.getMonth() + 1);
+    $("#anio").val(fechaActual.getFullYear());
+}
+
+function editarCalificacion(calificacion) {
+    $("#calificacion_id").val(calificacion.id_evaluacion);
+    $("#mes").val(calificacion.mes);
+    $("#anio").val(calificacion.anio);
+    $("#calificacion").val(calificacion.calificacion);
+    $("#comentarios").val(calificacion.comentarios || "");
 }

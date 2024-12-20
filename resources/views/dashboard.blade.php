@@ -14,12 +14,12 @@
 <body>
     <div class="container-fluid mt-3 mb-4">
         <div class="d-flex justify-content-end">
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="btn btn-danger me-4">
-                    <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
-                </button>
-            </form>
+        <form method="POST" action="{{ route('logout') }}" class="d-flex justify-content-end">
+            @csrf
+            <button type="submit" class="btn btn-danger me-4">
+                <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+            </button>
+        </form>
         </div>
     </div>
 
@@ -63,8 +63,8 @@
     </div>
 
     <!-- Modales -->
-    @include('empleados.modal-calificaciones')
     @include('empleados.modal-estadisticas')
+    @include('empleados.modal-calificaciones')
 
     <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

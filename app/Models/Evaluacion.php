@@ -8,6 +8,7 @@ class Evaluacion extends Model
 {
    protected $table = 'evaluaciones';
    protected $primaryKey = 'id_evaluacion';
+   public $timestamps = false;
 
    protected $fillable = [
        'id_usuario',
