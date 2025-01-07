@@ -65,6 +65,7 @@
     <!-- Modales -->
     @include('empleados.modal-estadisticas')
     @include('empleados.modal-calificaciones')
+    @include('empleados.modal-detalles-empleado')
 
     <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

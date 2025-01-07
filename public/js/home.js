@@ -475,3 +475,53 @@ function editarCalificacion(calificacion) {
     $("#calificacion").val(calificacion.calificacion);
     $("#comentarios").val(calificacion.comentarios || "");
 }
+
+function verDetallesEmpleado(id) {
+    $.ajax({
+        url: `${getBaseUrl()}/empleados/${id}`,
+        type: "GET",
+        success: function (empleado) {
+            // Actualizar la información en el modal
+            $("#detalleNombreCompleto").text(
+                `${empleado.nombre} ${empleado.apellido}`
+            );
+            $("#detalleEdad").text(empleado.edad);
+            $("#detalleCorreo").text(empleado.correo);
+            $("#detallePuesto").text(empleado.ocupacion);
+            $("#detalleDepartamento").text(
+                empleado.departamento?.nombre_departamento || "No asignado"
+            );
+            $("#detalleEstado").text(empleado.estado?.estado || "No asignado");
+
+            // Manejo específico del promedio
+            const promedio =
+                empleado.promedio_calificacion || empleado.promedio || 0;
+            $("#detallePromedio").text(
+                promedio ? Number(promedio).toFixed(1) : "0.0"
+            );
+
+            // Manejar el avatar
+            if (empleado.avatar) {
+                $("#detalleAvatar")
+                    .attr(
+                        "src",
+                        `${getBaseUrl()}/storage/fotos_empleados/${
+                            empleado.avatar
+                        }`
+                    )
+                    .show();
+                $("#defaultAvatar").hide();
+            } else {
+                $("#detalleAvatar").hide();
+                $("#defaultAvatar").show();
+            }
+
+            // Mostrar el modal
+            $("#modalDetallesEmpleado").modal("show");
+        },
+        error: function (xhr) {
+            console.error(xhr.responseJSON);
+            alert("Error al cargar los detalles del empleado");
+        },
+    });
+}

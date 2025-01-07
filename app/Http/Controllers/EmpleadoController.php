@@ -142,16 +142,25 @@ public function update(Request $request, $id)
     }
 
     public function show(Usuario $empleado)
-    {
-        try {
-            $empleado->load('departamento', 'estado');
-            return response()->json($empleado);
-        } catch (\Exception $e) {
-            Log::error('Error al obtener empleado: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al obtener el empleado: ' . $e->getMessage()
-            ], 500);
-        }
+{
+    try {
+        // Cargar las relaciones necesarias
+        $empleado->load('departamento', 'estado');
+
+        // Calcular el promedio de calificaciones
+        $promedio = $empleado->evaluaciones()
+            ->avg('calificacion') ?? 0;
+
+        // Agregar el promedio al objeto empleado
+        $empleado->promedio_calificacion = round($promedio, 1);
+
+        return response()->json($empleado);
+    } catch (\Exception $e) {
+        Log::error('Error al obtener empleado: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Error al obtener el empleado: ' . $e->getMessage()
+        ], 500);
     }
+}
 }

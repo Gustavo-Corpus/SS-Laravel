@@ -35,6 +35,11 @@
                     @endif
                 </td>
                 <td>
+                    <button class="btn btn-info btn-sm"
+                            onclick="verDetallesEmpleado({{ $empleado->id_usuarios }})"
+                            title="Ver detalles">
+                        <i class="bi bi-eye"></i>
+                    </button>
                     <button class="btn btn-success btn-sm"
                             onclick="abrirModalCalificaciones({{ $empleado->id_usuarios }}, '{{ $empleado->nombre }} {{ $empleado->apellido }}')"
                             title="Calificaciones">

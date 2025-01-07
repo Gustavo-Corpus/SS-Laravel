@@ -34,4 +34,9 @@ class Usuario extends Model
     {
         return $this->belongsTo(Estado::class, 'id_estado');
     }
+
+    public function evaluaciones()
+    {
+        return $this->hasMany(\App\Models\Evaluacion::class, 'id_usuario', 'id_usuarios');
+    }
 }
