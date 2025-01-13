@@ -8,6 +8,110 @@ let dataTable;
 let selectedEstado = "";
 let pieChart = null;
 let barChart = null;
+let quickViewTimeout;
+const quickViewDelay = 500; // medio segundo de delay antes de mostrar
+let currentChart = null;
+
+// Agregar eventos de hover a las imágenes de avatar
+$(document).on(
+    {
+        mouseenter: function () {
+            const empleadoId = $(this).closest("tr").find("td:first").text();
+            quickViewTimeout = setTimeout(
+                () => showQuickView(empleadoId),
+                quickViewDelay
+            );
+        },
+        mouseleave: function () {
+            clearTimeout(quickViewTimeout);
+            // Pequeño delay antes de cerrar para permitir mover el mouse al modal
+            setTimeout(() => {
+                if (!$("#quickViewModal:hover").length) {
+                    $("#quickViewModal").modal("hide");
+                }
+            }, 300);
+        },
+    },
+    "#table_empleados tbody tr img"
+);
+
+// Mantener modal abierto mientras el mouse está sobre él
+$("#quickViewModal").hover(
+    function () {
+        /* no hacer nada al entrar */
+    },
+    function () {
+        $(this).modal("hide");
+    }
+);
+
+function showQuickView(empleadoId) {
+    $.get(
+        `${getBaseUrl()}/empleado/${empleadoId}/evaluaciones`,
+        function (response) {
+            if (response.success) {
+                const empleado = response.empleado;
+
+                // Actualizar datos del modal
+                $("#qv-nombre").text(`${empleado.nombre} ${empleado.apellido}`);
+                $("#qv-puesto").text(empleado.puesto);
+                $("#qv-departamento").text(empleado.departamento);
+                $("#qv-correo").text(empleado.correo);
+                $("#qv-promedio").text(empleado.promedio);
+
+                // Actualizar la URL del avatar
+                $("#qv-avatar").attr(
+                    "src",
+                    empleado.avatar
+                        ? `${getBaseUrl()}/storage/fotos_empleados/${
+                              empleado.avatar
+                          }`
+                        : `${getBaseUrl()}/images/default-avatar.png`
+                );
+
+                // Actualizar gráfica
+                updateChart(empleado.evaluaciones);
+
+                // Mostrar modal
+                $("#quickViewModal").modal("show");
+            }
+        }
+    ).fail(function (error) {
+        console.error("Error al cargar datos:", error);
+    });
+}
+
+function updateChart(evaluaciones) {
+    if (currentChart) {
+        currentChart.destroy();
+    }
+
+    const ctx = document.getElementById("evaluacionesChart").getContext("2d");
+    currentChart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: evaluaciones.map((e) => e.mes),
+            datasets: [
+                {
+                    label: "Calificación",
+                    data: evaluaciones.map((e) => e.valor),
+                    borderColor: "#0d6efd",
+                    tension: 0.1,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 10,
+                },
+            },
+        },
+    });
+}
 
 function mostrarEstadisticas() {
     $.ajax({

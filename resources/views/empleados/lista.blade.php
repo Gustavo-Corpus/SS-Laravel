@@ -61,3 +61,44 @@
         </tbody>
     </table>
 </div>
+<!-- Modal de Vista Rápida -->
+<div class="modal fade" id="quickViewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-body p-0">
+                <div class="card border-0">
+                    <div class="row g-0">
+                        <div class="col-md-4 p-4 text-center">
+                            <img id="qv-avatar" src="" class="rounded-circle img-fluid mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                            <h4 id="qv-nombre" class="mb-0"></h4>
+                            <p id="qv-puesto" class="text-muted"></p>
+                        </div>
+                        <div class="col-md-8 p-4">
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="bi bi-building me-2"></i>
+                                        <span id="qv-departamento"></span>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-envelope me-2"></i>
+                                        <span id="qv-correo"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-star-fill text-warning me-2"></i>
+                                        <span id="qv-promedio" class="h4 mb-0"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chart-container" style="height: 200px;">
+                                <canvas id="evaluacionesChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

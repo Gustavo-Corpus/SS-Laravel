@@ -163,4 +163,47 @@ public function update(Request $request, $id)
         ], 500);
     }
 }
+
+public function getEvaluaciones($id)
+{
+    try {
+        $empleado = Usuario::with(['departamento', 'evaluaciones' => function($query) {
+            $query->orderBy('anio', 'ASC')
+                  ->orderBy('mes', 'ASC')
+                  ->limit(9);
+        }])->findOrFail($id);
+
+        $evaluaciones = $empleado->evaluaciones->map(function($eval) {
+            $nombresMeses = [
+                1 => 'Ene', 2 => 'Feb', 3 => 'Mar', 4 => 'Abr',
+                5 => 'May', 6 => 'Jun', 7 => 'Jul', 8 => 'Ago',
+                9 => 'Sep', 10 => 'Oct', 11 => 'Nov', 12 => 'Dic'
+            ];
+            return [
+                'mes' => $nombresMeses[$eval->mes] . ' ' . $eval->anio,
+                'valor' => round($eval->calificacion, 1)
+            ];
+        })->values();
+
+        return response()->json([
+            'success' => true,
+            'empleado' => [
+                'nombre' => $empleado->nombre,
+                'apellido' => $empleado->apellido,
+                'puesto' => $empleado->ocupacion,
+                'departamento' => $empleado->departamento->nombre_departamento,
+                'correo' => $empleado->correo,
+                'promedio' => round($empleado->evaluaciones->avg('calificacion'), 1),
+                'avatar' => $empleado->avatar,
+                'evaluaciones' => $evaluaciones
+            ]
+        ]);
+    } catch (\Exception $e) {
+        \Log::error('Error al obtener evaluaciones: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Error al obtener datos del empleado'
+        ], 500);
+    }
+}
 }

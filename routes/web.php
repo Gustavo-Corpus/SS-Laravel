@@ -35,6 +35,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/empleados/{empleado}', [EmpleadoController::class, 'update']);
     Route::delete('/empleados/{empleado}', [EmpleadoController::class, 'destroy']);
 
+    Route::get('/empleado/{id}/evaluaciones', [EmpleadoController::class, 'getEvaluaciones']);
+
     // Calificaciones
     Route::get('/calificaciones/{empleado}', [CalificacionController::class, 'getCalificaciones']);
     Route::post('/calificaciones', [CalificacionController::class, 'store']);
