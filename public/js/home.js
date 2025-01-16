@@ -12,6 +12,8 @@ let quickViewTimeout;
 const quickViewDelay = 500; // medio segundo de delay antes de mostrar
 let currentChart = null;
 
+let currentView = "table";
+
 // Agregar eventos de hover a las imágenes de avatar
 $(document).on(
     {
@@ -46,31 +48,92 @@ $("#quickViewModal").hover(
 );
 
 function showQuickView(empleadoId) {
+    console.log("ID del empleado:", empleadoId);
+
     $.get(
         `${getBaseUrl()}/empleado/${empleadoId}/evaluaciones`,
         function (response) {
+            console.log("Respuesta completa:", response);
+
             if (response.success) {
                 const empleado = response.empleado;
 
-                // Actualizar datos del modal
-                $("#qv-nombre").text(`${empleado.nombre} ${empleado.apellido}`);
-                $("#qv-puesto").text(empleado.puesto);
-                $("#qv-departamento").text(empleado.departamento);
-                $("#qv-correo").text(empleado.correo);
-                $("#qv-promedio").text(empleado.promedio);
+                // Actualizar datos básicos con animación
+                $("#qv-nombre")
+                    .text(`${empleado.nombre} ${empleado.apellido}`)
+                    .hide()
+                    .fadeIn(500);
+                $("#qv-puesto").text(empleado.ocupacion).hide().fadeIn(700);
+                $("#qv-departamento")
+                    .text(empleado.departamento)
+                    .hide()
+                    .fadeIn(900);
 
-                // Actualizar la URL del avatar
-                $("#qv-avatar").attr(
-                    "src",
-                    empleado.avatar
-                        ? `${getBaseUrl()}/storage/fotos_empleados/${
-                              empleado.avatar
-                          }`
-                        : `${getBaseUrl()}/images/default-avatar.png`
-                );
+                // Actualizar avatar con animación
+                $("#qv-avatar")
+                    .attr(
+                        "src",
+                        empleado.avatar
+                            ? `${getBaseUrl()}/storage/fotos_empleados/${
+                                  empleado.avatar
+                              }`
+                            : `${getBaseUrl()}/images/default-avatar.png`
+                    )
+                    .hide()
+                    .fadeIn(1000);
 
-                // Actualizar gráfica
-                updateChart(empleado.evaluaciones);
+                // Calcular promedio y porcentaje
+                const promedio = parseFloat(empleado.promedio || 0);
+                const porcentaje = Math.min(Math.round(promedio * 10), 100); // Asegurar que no exceda 100%
+                console.log("Promedio:", promedio);
+                console.log("Porcentaje calculado:", porcentaje);
+
+                // Actualizar anillo de progreso y rendimiento
+                updateProgressRing(porcentaje);
+
+                // Determinar clase de rendimiento basada en el promedio
+                const performanceClass =
+                    promedio < 6
+                        ? "bg-danger text-white"
+                        : promedio < 8
+                        ? "bg-warning text-dark"
+                        : "bg-success text-white";
+
+                $("#qv-performance")
+                    .removeClass()
+                    .addClass(performanceClass)
+                    .html(
+                        `<i class="bi bi-graph-up me-1"></i>${promedio.toFixed(
+                            1
+                        )}`
+                    )
+                    .hide()
+                    .fadeIn(1200);
+
+                // Actualizar el promedio con animación
+                $("#qv-promedio")
+                    .prop("Counter", 0)
+                    .animate(
+                        {
+                            Counter: promedio,
+                        },
+                        {
+                            duration: 1000,
+                            step: function (now) {
+                                $(this).text(now.toFixed(1));
+                            },
+                        }
+                    );
+
+                // Actualizar estadísticas adicionales con animación
+                animateValue("#qv-asistencia", 0, 98, 1500);
+                animateValue("#qv-logros", 0, empleado.logros || 12, 1500);
+                animateValue("#qv-progreso", 0, 15, 1500, "+");
+
+                // Actualizar gráfica si hay evaluaciones
+                if (empleado.evaluaciones?.length > 0) {
+                    updateChart(empleado.evaluaciones);
+                }
 
                 // Mostrar modal
                 $("#quickViewModal").modal("show");
@@ -79,6 +142,25 @@ function showQuickView(empleadoId) {
     ).fail(function (error) {
         console.error("Error al cargar datos:", error);
     });
+}
+
+function animateValue(
+    selector,
+    start,
+    end,
+    duration,
+    prefix = "",
+    suffix = "%"
+) {
+    $({ val: start }).animate(
+        { val: end },
+        {
+            duration: duration,
+            step: function (now) {
+                $(selector).text(prefix + Math.round(now) + suffix);
+            },
+        }
+    );
 }
 
 function updateChart(evaluaciones) {
@@ -96,18 +178,43 @@ function updateChart(evaluaciones) {
                     label: "Calificación",
                     data: evaluaciones.map((e) => e.valor),
                     borderColor: "#0d6efd",
-                    tension: 0.1,
+                    backgroundColor: "rgba(13, 110, 253, 0.1)",
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: "#ffffff",
+                    pointBorderColor: "#0d6efd",
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
                 },
             ],
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false,
+                },
+            },
             scales: {
                 y: {
                     beginAtZero: true,
                     max: 10,
+                    grid: {
+                        drawBorder: false,
+                    },
                 },
+                x: {
+                    grid: {
+                        display: false,
+                    },
+                },
+            },
+            animation: {
+                duration: 1500,
+                easing: "easeInOutQuart",
             },
         },
     });
@@ -333,11 +440,52 @@ function cargarCalificaciones(empleadoId) {
 
 // Eventos DOM Ready
 $(document).ready(function () {
+    // Manejo de vistas
+    $("#tableViewBtn, #cardViewBtn").on("click", function (e) {
+        e.preventDefault();
+        console.log("Botón clickeado:", this.id); // Debug
+
+        const targetView = this.id === "tableViewBtn" ? "table" : "card";
+        switchView(targetView);
+    });
+
     // Token CSRF para todas las peticiones AJAX
     $.ajaxSetup({
         headers: {
             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
         },
+    });
+
+    $("#quickViewModal").on("hidden.bs.modal", function () {
+        const circle = document.getElementById("progress-ring-circle");
+        const valueDisplay = circle
+            ?.closest(".progress-circular")
+            ?.querySelector(".progress-value");
+
+        if (circle && valueDisplay) {
+            const radius = circle.r.baseVal.value;
+            const circumference = 2 * Math.PI * radius;
+
+            circle.style.transition = "none";
+            circle.style.strokeDasharray = `${circumference} ${circumference}`;
+            circle.style.strokeDashoffset = circumference;
+            valueDisplay.textContent = "0%";
+        }
+    });
+
+    // Añadir efecto hover en las tarjetas de estadísticas
+    $(".stats-card").hover(
+        function () {
+            $(this).addClass("transform-active");
+        },
+        function () {
+            $(this).removeClass("transform-active");
+        }
+    );
+
+    // Inicializar tooltips de Bootstrap
+    $(function () {
+        $('[data-bs-toggle="tooltip"]').tooltip();
     });
 
     // Recuperar estado seleccionado
@@ -445,6 +593,48 @@ $(document).ready(function () {
         });
     });
 });
+
+// Función para cambiar entre vistas
+function cambiarVista(vista) {
+    console.log("Cambiando a vista:", vista);
+
+    // Actualizar botones
+    $("#btnTabla, #btnTarjetas").removeClass("active");
+    $(`#btn${vista.charAt(0).toUpperCase() + vista.slice(1)}`).addClass(
+        "active"
+    );
+
+    // Cambiar vistas con animación
+    if (vista === "tabla") {
+        $("#vistaTarjetas").fadeOut(300, function () {
+            $("#vistaTabla").fadeIn(300);
+            if (dataTable) {
+                dataTable.columns.adjust();
+            }
+        });
+    } else {
+        $("#vistaTabla").fadeOut(300, function () {
+            $("#vistaTarjetas").fadeIn(300);
+            // Animar la entrada de las tarjetas
+            $(".card").each(function (index) {
+                $(this)
+                    .delay(index * 100)
+                    .animate({ opacity: 1 }, 500);
+            });
+        });
+    }
+}
+
+// Función para animar las tarjetas
+function animateCards() {
+    console.log("Animando tarjetas"); // Debug
+    $(".employee-card").each(function (index) {
+        $(this)
+            .css("opacity", 0)
+            .delay(index * 100)
+            .animate({ opacity: 1 }, 500);
+    });
+}
 
 // Funciones auxiliares
 // En public/js/home.js, modifica la función initDataTable:
@@ -629,3 +819,104 @@ function verDetallesEmpleado(id) {
         },
     });
 }
+
+// Llamar a la animación cuando se muestra la vista de tarjetas
+$("#cardViewBtn").on("click", animateCards);
+
+function updateProgressRing(percentage) {
+    console.log("Iniciando updateProgressRing con valor:", percentage);
+
+    const circle = document.getElementById("progress-ring-circle");
+    const valueDisplay = circle
+        ?.closest(".progress-circular")
+        ?.querySelector(".progress-value");
+
+    console.log("Elementos encontrados:", {
+        circle: !!circle,
+        valueDisplay: !!valueDisplay,
+    });
+
+    if (!circle || !valueDisplay) {
+        console.log("Elementos no encontrados");
+        return;
+    }
+
+    // Calcular longitud del círculo
+    const radius = circle.r.baseVal.value;
+    const circumference = 2 * Math.PI * radius;
+
+    // Establecer valores iniciales
+    circle.style.strokeDasharray = `${circumference} ${circumference}`;
+    circle.style.strokeDashoffset = circumference;
+    valueDisplay.textContent = "0%";
+
+    // Forzar reflow
+    circle.getBoundingClientRect();
+
+    requestAnimationFrame(() => {
+        // Calcular el offset basado en el porcentaje
+        const offset = circumference - (percentage / 100) * circumference;
+
+        // Aplicar la transición y el nuevo offset
+        circle.style.transition = "stroke-dashoffset 1s ease-in-out";
+        circle.style.strokeDashoffset = offset;
+
+        // Animar el número
+        $({ val: 0 }).animate(
+            { val: percentage },
+            {
+                duration: 1000,
+                step: function (now) {
+                    valueDisplay.textContent = `${Math.round(now)}%`;
+                },
+            }
+        );
+    });
+}
+
+// Función auxiliar para animar valores numéricos
+function animateValue(
+    selector,
+    start,
+    end,
+    duration,
+    prefix = "",
+    suffix = "%"
+) {
+    $({ val: start }).animate(
+        { val: end },
+        {
+            duration: duration,
+            step: function (now) {
+                $(selector).text(prefix + Math.round(now) + suffix);
+            },
+        }
+    );
+}
+
+function cambiarVista(vista) {
+    console.log("Cambiando a vista:", vista); // Debug
+
+    if (vista === "tabla") {
+        $("#vistaTabla").show();
+        $("#vistaTarjetas").hide();
+        $("#btnTabla").addClass("active");
+        $("#btnTarjetas").removeClass("active");
+    } else {
+        $("#vistaTabla").hide();
+        $("#vistaTarjetas").show();
+        $("#btnTabla").removeClass("active");
+        $("#btnTarjetas").addClass("active");
+    }
+}
+
+// Asegúrate de que la tabla se ajuste cuando se muestra
+$(document).ready(function () {
+    $("#btnTabla, #btnTarjetas").on("click", function () {
+        if (dataTable) {
+            setTimeout(() => {
+                dataTable.columns.adjust();
+            }, 0);
+        }
+    });
+});
