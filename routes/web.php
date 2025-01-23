@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmpleadoController;
 use App\Http\Controllers\CalificacionController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\LogoutController ;
 
 // Rutas de autenticación
 Route::middleware('guest')->group(function () {
@@ -19,7 +20,15 @@ Route::middleware(['auth'])->group(function () {
     // Redirección de raíz a dashboard
     Route::get('/', function () {
         return redirect('/dashboard');
+
     });
+
+   // Ruta de vista clientes
+
+   Route::get('/admin/clientes', function () {
+    return view('admin.clientes');
+})->name('admin.clientes');
+
 
     // Dashboard y estadísticas
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -44,4 +53,12 @@ Route::middleware(['auth'])->group(function () {
 
     // Logout
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+    Route::post('/submit-survey', [SurveyController::class, 'store'])->name('submit.survey');
+
+    Route::put('/casos/update', [CasoController::class, 'update'])->name('casos.update');
+    Route::post('/encuesta', [EncuestaController::class, 'store'])->name('encuesta.store');
+    
+
+
+
 });
