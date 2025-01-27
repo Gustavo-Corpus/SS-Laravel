@@ -13,57 +13,51 @@
 <body>
     <div class="container-fluid mt-3 mb-4">
         <div class="d-flex justify-content-end">
-        <form id="logoutForm" method="POST" action="{{ route('logout') }}">
-    @csrf
-    <a href="#" onclick="event.preventDefault(); document.getElementById('logoutForm').submit();">
-        Cerrar Sesión
-    </a>
-    <input type="hidden" name="show_survey" value="true">
-</form>
+        <form method="POST" action="{{ route('logout') }}" class="d-flex justify-content-end">
+            @csrf
+            <button type="submit" class="btn btn-danger me-4">
+                <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+            </button>
+        </form>
 
         </div>
     </div>
 
     <h1 class="text-center fw-bold mb-5">Sistema de Empleados por Estado</h1>
 
-<!-- Botón de Administración Clientes -->
-<div class="d-flex justify-content-end mt-2">
-    <a href="{{ route('admin.clientes') }}" class="btn btn-warning">Administración Clientes</a>
-</div>
-
-<div class="container">
-    <div class="row justify-content-md-center">
-        <!-- Formulario a la izquierda -->
-        <div class="col-md-4" style="border-right: 1px solid #dee2e6;">
-            @include('empleados.formulario')
-        </div>
+    <div class="container">
+        <div class="row justify-content-md-center">
+            <!-- Formulario a la izquierda -->
+            <div class="col-md-4" style="border-right: 1px solid #dee2e6;">
+                @include('empleados.formulario')
+            </div>
 
         <!-- Lista de empleados a la derecha -->
         <div class="col-md-8">
-            <div class="mb-4">
-                <label for="estado" class="form-label">Seleccione un estado:</label>
-                <select class="form-select" id="estado" name="estado">
-                    <option value="">Seleccione un estado...</option>
-                    @foreach($estados as $estado)
-                        <option value="{{ $estado->id_estado }}">{{ $estado->estado }}</option>
-                    @endforeach
-                </select>
-            </div>
+                <div class="mb-4">
+                    <label for="estado" class="form-label">Seleccione un estado:</label>
+                    <select class="form-select" id="estado" name="estado">
+                        <option value="">Seleccione un estado...</option>
+                        @foreach($estados as $estado)
+                            <option value="{{ $estado->id_estado }}">{{ $estado->estado }}</option>
+                        @endforeach
+                    </select>
+                </div>
 
-            <h2 class="text-center">Lista de Empleados
-                <span class="float-end">
-                    <button class="btn btn-primary me-2" onclick="mostrarEstadisticas()" title="Ver Estadísticas">
-                        <i class="bi bi-bar-chart-fill"></i>
-                    </button>
-                    <button class="btn btn-success me-2" onclick="exportarEmpleados()" title="Exportar a CSV">
-                        <i class="bi bi-filetype-csv"></i>
-                    </button>
-                </span>
-            </h2>
-            <hr>
-            <div id="empleadosContainer">
-                @include('empleados.lista')
-            </div>
+                <h2 class="text-center">Lista de Empleados
+                    <span class="float-end">
+                        <button class="btn btn-primary me-2" onclick="mostrarEstadisticas()" title="Ver Estadísticas">
+                            <i class="bi bi-bar-chart-fill"></i>
+                        </button>
+                        <button class="btn btn-success me-2" onclick="exportarEmpleados()" title="Exportar a CSV">
+                            <i class="bi bi-filetype-csv"></i>
+                        </button>
+                    </span>
+                </h2>
+                <hr>
+                <div id="empleadosContainer">
+                    @include('empleados.lista')
+                </div>
         </div>
     </div>
 </div>

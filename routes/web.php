@@ -23,13 +23,6 @@ Route::middleware(['auth'])->group(function () {
 
     });
 
-   // Ruta de vista clientes
-
-   Route::get('/admin/clientes', function () {
-    return view('admin.clientes');
-})->name('admin.clientes');
-
-
     // Dashboard y estadísticas
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/estadisticas', [DashboardController::class, 'getEstadisticas'])->name('estadisticas');
@@ -53,12 +46,4 @@ Route::middleware(['auth'])->group(function () {
 
     // Logout
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
-    Route::post('/submit-survey', [SurveyController::class, 'store'])->name('submit.survey');
-
-    Route::put('/casos/update', [CasoController::class, 'update'])->name('casos.update');
-    Route::post('/encuesta', [EncuestaController::class, 'store'])->name('encuesta.store');
-    
-
-
-
 });
