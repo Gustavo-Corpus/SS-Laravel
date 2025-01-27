@@ -49,27 +49,21 @@
                                 </div>
                             @endif
                         </td>
-                        <td>
-                            <button class="btn btn-info btn-sm"
-                                    onclick="verDetallesEmpleado({{ $empleado->id_usuarios }})"
-                                    title="Ver detalles">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                            <button class="btn btn-success btn-sm"
-                                    onclick="abrirModalCalificaciones({{ $empleado->id_usuarios }}, '{{ $empleado->nombre }} {{ $empleado->apellido }}')"
-                                    title="Calificaciones">
-                                <i class="bi bi-star-fill"></i>
-                            </button>
-                            <button class="btn btn-warning btn-sm"
-                                    onclick="editarEmpleado({{ $empleado->id_usuarios }})"
-                                    title="Editar">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button class="btn btn-danger btn-sm"
-                                    onclick="eliminarEmpleado({{ $empleado->id_usuarios }})"
-                                    title="Eliminar">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                        <td class="actions-column">
+                            <div class="d-flex align-items-center gap-1">
+                                <button class="btn btn-info btn-sm" onclick="verDetalles({{ $empleado->id_usuarios }})">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                <button class="btn btn-success btn-sm" onclick="verCalificaciones({{ $empleado->id_usuarios }})">
+                                    <i class="bi bi-star"></i>
+                                </button>
+                                <button class="btn btn-warning btn-sm" onclick="editarEmpleado({{ $empleado->id_usuarios }})">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="eliminarEmpleado({{ $empleado->id_usuarios }})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                     @endforeach

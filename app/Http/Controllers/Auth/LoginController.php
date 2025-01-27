@@ -52,4 +52,35 @@ public function logout(Request $request)
     $request->session()->regenerateToken();
     return redirect('/login');
 }
+
+    public function cambiarPassword(Request $request)
+    {
+        try {
+            $request->validate([
+                'username' => 'required',
+                'new_password' => 'required|min:6'
+            ]);
+
+            $user = User::where('username', $request->username)->first();
+
+            if (!$user) {
+                return response()->json([
+                    'message' => 'Usuario no encontrado'
+                ], 404);
+            }
+
+            $user->password = bcrypt($request->new_password);
+            $user->save();
+
+            return response()->json([
+                'message' => 'Contraseña actualizada correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error al cambiar contraseña: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Error al actualizar la contraseña: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

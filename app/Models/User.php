@@ -3,30 +3,78 @@
 namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    protected $table = 'users';
-    public $timestamps = false; // Si tu tabla no tiene timestamps
+    use Notifiable;
+
+    public $timestamps = false;
 
     protected $fillable = [
         'username',
-        'password'
+        'nombre',
+        'apellido',
+        'name',
+        'email',
+        'password',
+        'rol',
+        'department_id',
+        'estado_id',
+        'average_rating',
+        'tickets_resolved'
     ];
 
     protected $hidden = [
         'password',
-        'remember_token'
+        'remember_token',
     ];
 
-    // Agregar si tu tabla tiene una columna remember_token
     protected $casts = [
-        'password' => 'string',
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'average_rating' => 'decimal:2',
     ];
 
-    // Si quieres usar el username en lugar del email para autenticación
-    public function getAuthIdentifierName()
+    // Relaciones
+    public function department()
     {
-        return 'username';
+        return $this->belongsTo(Departamento::class);
+    }
+
+    public function estado()
+    {
+        return $this->belongsTo(Estado::class);
+    }
+
+    public function ticketsAsignados()
+    {
+        return $this->hasMany(Ticket::class, 'id_asignado', 'id');
+    }
+
+    public function calificacionesRecibidas()
+    {
+        return $this->hasMany(CalificacionTicket::class, 'id_empleado', 'id');
+    }
+
+    public function tickets()
+    {
+        return $this->hasMany(Ticket::class, 'id_usuario', 'id');
+    }
+
+    // Helpers
+    public function isAdmin()
+    {
+        return $this->rol === 'admin';
+    }
+
+    public function isEmployee()
+    {
+        return $this->rol === 'employee';
+    }
+
+    public function isClient()
+    {
+        return $this->rol === 'client';
     }
 }
