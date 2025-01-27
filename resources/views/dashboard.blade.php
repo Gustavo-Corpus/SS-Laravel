@@ -9,19 +9,44 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/2.0.1/css/dataTables.bootstrap5.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .actions-column {
+            white-space: nowrap;
+            min-width: 160px;
+        }
+        .actions-column .btn {
+            margin-right: 4px;
+        }
+        .actions-column .btn:last-child {
+            margin-right: 0;
+        }
+    </style>
 </head>
 <body>
     <div class="container-fluid mt-3 mb-4">
-        <div class="d-flex justify-content-end">
-        <form method="POST" action="{{ route('logout') }}" class="d-flex justify-content-end">
-            @csrf
-            <button type="submit" class="btn btn-danger me-4">
-                <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
-            </button>
-        </form>
+            <div class="d-flex justify-content-between align-items-center">
+                <!-- Botones del lado izquierdo -->
+                <div>
+                    <a href="{{ route('tickets.dashboard') }}" class="btn btn-primary">
+                        <i class="bi bi-ticket-detailed"></i> Dashboard Tickets
+                    </a>
+                </div>
 
+                <!-- Botones del lado derecho -->
+                <div class="d-flex align-items-center">
+                    <a href="{{ route('users.index') }}" class="btn btn-primary me-2">
+                        <i class="bi bi-people"></i> Gestión de Usuarios
+                    </a>
+                    @include('components.notifications')
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
-    </div>
 
     <h1 class="text-center fw-bold mb-5">Sistema de Empleados por Estado</h1>
 
@@ -32,8 +57,8 @@
                 @include('empleados.formulario')
             </div>
 
-        <!-- Lista de empleados a la derecha -->
-        <div class="col-md-8">
+            <!-- Lista de empleados a la derecha -->
+            <div class="col-md-8">
                 <div class="mb-4">
                     <label for="estado" class="form-label">Seleccione un estado:</label>
                     <select class="form-select" id="estado" name="estado">
@@ -58,10 +83,9 @@
                 <div id="empleadosContainer">
                     @include('empleados.lista')
                 </div>
+            </div>
         </div>
     </div>
-</div>
-
 
     <!-- Modales -->
     @include('empleados.modal-estadisticas')

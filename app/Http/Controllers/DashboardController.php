@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Ticket;
+use App\Models\CalificacionTicket;
 use App\Models\Estado;
 use App\Models\Usuario;
 use App\Models\Evaluacion;
@@ -13,23 +15,58 @@ use Illuminate\Support\Facades\Log;
 class DashboardController extends Controller
 {
     public function index()
-    {
-        // Obtener estados y departamentos para los formularios
-        $estados = Estado::orderBy('estado')->get();
-        $departamentos = Departamento::orderBy('nombre_departamento')->get();
+{
+    $user = auth()->user();
 
-        // Obtener empleados con sus relaciones y promedio de calificaciones
-        $empleados = Usuario::select('usuarios.*')
-            ->where('estatus', 'activo')
-            ->leftJoin('departamentos', 'usuarios.id_departamento', '=', 'departamentos.id_departamento')
-            ->leftJoin('estados', 'usuarios.id_estado', '=', 'estados.id_estado')
-            ->with(['departamento', 'estado'])
-            ->addSelect(DB::raw('(SELECT AVG(calificacion) FROM evaluaciones WHERE evaluaciones.id_usuario = usuarios.id_usuarios) as promedio_calificacion'))
-            ->orderBy('nombre')
-            ->get();
+    switch($user->rol) {
+        case 'admin':
+            // Mantén tu código actual del admin
+            $estados = Estado::orderBy('estado')->get();
+            $departamentos = Departamento::orderBy('nombre_departamento')->get();
+            $empleados = Usuario::select('usuarios.*')
+                ->where('estatus', 'activo')
+                ->leftJoin('departamentos', 'usuarios.id_departamento', '=', 'departamentos.id_departamento')
+                ->leftJoin('estados', 'usuarios.id_estado', '=', 'estados.id_estado')
+                ->with(['departamento', 'estado'])
+                ->addSelect(DB::raw('(SELECT AVG(calificacion) FROM evaluaciones WHERE evaluaciones.id_usuario = usuarios.id_usuarios) as promedio_calificacion'))
+                ->orderBy('nombre')
+                ->get();
+            return view('dashboard', compact('estados', 'departamentos', 'empleados'));
 
-        return view('dashboard', compact('estados', 'departamentos', 'empleados'));
+        case 'empleado':
+            // Recalcular estadísticas del empleado
+            $ticketsResueltos = Ticket::where('id_asignado', $user->id)
+                ->where('estado', 'resuelto')
+                ->count();
+
+            $promedio = CalificacionTicket::where('id_empleado', $user->id)
+                ->avg('calificacion') ?? 0;
+
+            // Actualizar estadísticas en la base de datos
+            $user->tickets_resolved = $ticketsResueltos;
+            $user->average_rating = round($promedio, 2);
+            $user->save();
+
+            // Obtener tickets para la vista
+            $ticketsEnProceso = Ticket::where('id_asignado', $user->id)
+                ->where('estado', 'en_proceso')
+                ->get();
+
+            $ticketsResueltos = Ticket::where('id_asignado', $user->id)
+                ->where('estado', 'resuelto')
+                ->get();
+
+            return view('dashboards.empleado', compact('ticketsEnProceso', 'ticketsResueltos'));
+
+        case 'cliente':
+            return view('dashboards.cliente')->with([
+                'modal_crear_ticket' => view('tickets.modals.crear')->render()
+            ]);
+
+        default:
+            return redirect()->route('login');
     }
+}
 
     public function getEmpleadosPorEstado(Request $request)
     {
